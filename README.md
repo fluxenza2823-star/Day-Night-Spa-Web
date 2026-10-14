@@ -1,139 +1,142 @@
-# Day Night Outcall Massage Spa: Website
+# @vitejs/plugin-react [![npm](https://img.shields.io/npm/v/@vitejs/plugin-react.svg)](https://npmjs.com/package/@vitejs/plugin-react)
 
-A responsive spa website built with **React + Vite + plain CSS + Lucide icons + React Router**. It runs on localhost and on Vercel, and does not depend on Claude or any other hosting.
+The default Vite plugin for React projects.
 
-Pages: Home, Services, About, Home Service (WhatsApp booking request), Contact, Privacy Policy.
+- enable [Fast Refresh](https://www.npmjs.com/package/react-refresh) in development (requires react >= 16.9)
+- use the [automatic JSX runtime](https://legacy.reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html)
+- use custom Babel plugins/presets
+- small installation size
 
-## Important honesty notes
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-- **No invented content.** Services, prices, durations, therapist details and certifications are placeholders marked "Details to be confirmed". Fill them in `src/config/site.js` only after the business verifies them.
-- **No customer testimonials.** The only review content is the owner-supplied Google rating (4.5 from 22 reviews), shown with attribution. It is **not** included in the structured data until you set `rating.includeInStructuredData: true` in `src/config/site.js` after verifying it on the live Google profile.
-- **No booking database.** The booking form validates input and opens WhatsApp with a prefilled message. The site never claims a booking is confirmed.
-- **Images are illustrations.** No photos could be downloaded while building this project, so the site ships with three original SVG illustrations in `public/images/`. To use real spa photography, download properly licensed images (for example from Unsplash or Pexels, checking each licence), save them in `public/images/`, and update the `images` section in `src/config/site.js`. If an image fails to load, a soft gradient fallback is shown.
-- **Social preview image.** Many social platforms ignore SVG for link previews. Add a 1200x630 JPG or PNG (for example `public/images/og.jpg`) and set `seo.ogImage` in `src/config/site.js`.
-- **Privacy policy** is a template, not legal advice.
-
-## Project structure
-
-```
-day-night-spa/
-  public/
-    favicon.svg
-    images/            hero.svg, about.svg, home-service.svg
-    robots.txt         generated at build time
-    sitemap.xml        generated at build time
-  scripts/generate-seo.mjs
-  src/
-    config/site.js     ALL business details, SEO, services, images
-    components/        Header, Footer, Seo, ServiceCard, FAQ, ...
-    pages/             Home, Services, About, HomeService, Contact, Privacy, NotFound
-    utils/booking.js   validation + WhatsApp message builder
-    styles/global.css
-    App.jsx, main.jsx
-  .env.example
-  .gitignore
-  index.html
-  package.json
-  vite.config.js
-  vercel.json
-  README.md
+export default defineConfig({
+  plugins: [react()],
+})
 ```
 
-## Install and run locally
+## Options
 
-Requires Node.js 18 or newer.
+### include/exclude
 
-```bash
-npm install
-npm run dev        # http://localhost:5173
+Includes `.js`, `.jsx`, `.ts` & `.tsx` by default. This option can be used to add fast refresh to `.mdx` files:
+
+```js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import mdx from '@mdx-js/rollup'
+
+export default defineConfig({
+  plugins: [
+    { enforce: 'pre', ...mdx() },
+    react({ include: /\.(mdx|js|jsx|ts|tsx)$/ }),
+  ],
+})
 ```
 
-Production build and local preview:
+> `node_modules` are never processed by this plugin (but esbuild will)
 
-```bash
-npm run build      # outputs to dist/
-npm run preview    # http://localhost:4173
+### jsxImportSource
+
+Control where the JSX factory is imported from. Default to `'react'`
+
+```js
+react({ jsxImportSource: '@emotion/react' })
 ```
 
-No domain or environment variable is needed locally.
+### jsxRuntime
 
-## Editing the content
+By default, the plugin uses the [automatic JSX runtime](https://legacy.reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html). However, if you encounter any issues, you may opt out using the `jsxRuntime` option.
 
-Open `src/config/site.js`. It holds the business name, phone, WhatsApp number, address, hours, Google Maps URL, SEO title and description, social links, services and images. The WhatsApp link uses `https://wa.me/917091652065` and click-to-call uses `tel:+917091652065`.
-
-## Environment variable
-
-`.env.example` contains:
-
-```
-VITE_SITE_URL=https://your-domain.com
+```js
+react({ jsxRuntime: 'classic' })
 ```
 
-This is an **example value** and must be replaced with your real domain (no trailing slash). Copy it to `.env` for local use if you want, and add the same variable in Vercel. It is used for canonical links, Open Graph URLs, structured data, the sitemap and robots.txt. If it is not set, the site still works: it uses the current origin, and the sitemap stays empty until you set it.
+### babel
 
-## Upload to GitHub
+The `babel` option lets you add plugins, presets, and [other configuration](https://babeljs.io/docs/en/options) to the Babel transformation performed on each included file.
 
-1. Create an empty repository on github.com (no README).
-2. In the project folder:
-
-```bash
-git init
-git add .
-git commit -m "Initial website"
-git branch -M main
-git remote add origin https://github.com/YOUR-USER/YOUR-REPO.git
-git push -u origin main
+```js
+react({
+  babel: {
+    presets: [...],
+    // Your plugins run before any built-in transform (eg: Fast Refresh)
+    plugins: [...],
+    // Use .babelrc files
+    babelrc: true,
+    // Use babel.config.js files
+    configFile: true,
+  }
+})
 ```
 
-`.env` is git-ignored, so no secrets are uploaded.
+Note: When not using plugins, only esbuild is used for production builds, resulting in faster builds.
 
-## Deploy to Vercel
+#### Proposed syntax
 
-1. Sign in at vercel.com (the free Hobby plan is enough to start) and choose **Add New, Project**.
-2. Import your GitHub repository.
-3. Vercel detects Vite. Confirm: Build Command `npm run build`, Output Directory `dist`, Install Command `npm install`.
-4. Open **Environment Variables** and add `VITE_SITE_URL` with your real domain (for example `https://www.example.com`). If you do not have a domain yet, you can add it later and redeploy.
-5. Click **Deploy**. You get a `*.vercel.app` URL that already works over HTTPS.
-6. Test every page, refresh on `/contact` and `/home-service` (no 404 expected), and test the WhatsApp and call buttons on your phone.
+If you are using ES syntax that are still in proposal status (e.g. class properties), you can selectively enable them with the `babel.parserOpts.plugins` option:
 
-`vercel.json` already contains the SPA fallback so refreshing a nested route works.
+```js
+react({
+  babel: {
+    parserOpts: {
+      plugins: ['decorators-legacy'],
+    },
+  },
+})
+```
 
-## Connect a custom domain
+This option does not enable _code transformation_. That is handled by esbuild.
 
-1. In Vercel, open the project, then **Settings, Domains, Add**. Enter your domain (for example `example.com`). Vercel will also offer `www.example.com` and a redirect between them.
-2. Vercel shows the DNS records to create for your domain. Use the exact values shown in your dashboard. Typical values are:
-   - **Apex/root domain** (`example.com`): `A` record, name `@`, value `76.76.21.21`
-   - **www subdomain**: `CNAME` record, name `www`, value `cname.vercel-dns.com`
-3. Create those records at your registrar (see below), then click **Refresh** in Vercel. DNS changes can take from a few minutes to 48 hours.
-4. Once the domain shows as valid, Vercel issues an HTTPS certificate automatically.
-5. Set `VITE_SITE_URL` to the final address (decide whether `www` or the bare domain is primary), then **redeploy** so canonical links and the sitemap use it.
-6. Submit `https://your-domain/sitemap.xml` in Google Search Console if you use it. No ranking is guaranteed.
+**Note:** TypeScript syntax is handled automatically.
 
-### Registrar guidance
+Here's the [complete list of Babel parser plugins](https://babeljs.io/docs/en/babel-parser#ecmascript-proposalshttpsgithubcombabelproposals).
 
-The steps are similar at every registrar (GoDaddy, Namecheap, Hostinger, BigRock, Google Domains successors, Cloudflare, etc.):
+### reactRefreshHost
 
-1. Log in and open the domain's **DNS management** (sometimes called "DNS zone" or "Advanced DNS").
-2. Delete any existing `A` record for `@` that points to a parking page, and any conflicting `CNAME` for `www`.
-3. Add the `A` and `CNAME` records shown by Vercel.
-4. Leave email (`MX`) records alone if you use email on the domain.
-5. If you use Cloudflare, set the Vercel records to **DNS only** (grey cloud) at first.
-6. Alternative: change your nameservers to the ones Vercel gives you, and manage DNS inside Vercel.
+The `reactRefreshHost` option is only necessary in a module federation context. It enables HMR to work between a remote & host application. In your remote Vite config, you would add your host origin:
 
-## Troubleshooting
+```js
+react({ reactRefreshHost: 'http://localhost:3000' })
+```
 
-**Build fails on Vercel.** Check the build log. Confirm the Node version is 18 or newer (Project Settings, General, Node.js Version) and that `package.json` was committed. Run `npm run build` locally to reproduce.
+Under the hood, this simply updates the React Fash Refresh runtime URL from `/@react-refresh` to `http://localhost:3000/@react-refresh` to ensure there is only one Refresh runtime across the whole application. Note that if you define `base` option in the host application, you need to include it in the option, like: `http://localhost:3000/{base}`.
 
-**404 when refreshing a page.** Make sure `vercel.json` is in the repository root and was deployed. Redeploy after adding it.
+## Middleware mode
 
-**Canonical or sitemap shows the wrong domain, or sitemap is empty.** `VITE_SITE_URL` was missing or wrong when the build ran. Fix the variable in Vercel and redeploy (environment variables are baked in at build time).
+In [middleware mode](https://vite.dev/config/server-options.html#server-middlewaremode), you should make sure your entry `index.html` file is transformed by Vite. Here's an example for an Express server:
 
-**Domain says "Invalid configuration".** The DNS records do not match what Vercel shows, or have not propagated. Re-check name, type and value, remove conflicting records, wait, then refresh.
+```js
+app.get('/', async (req, res, next) => {
+  try {
+    let html = fs.readFileSync(path.resolve(root, 'index.html'), 'utf-8')
 
-**HTTPS not working or certificate pending.** Certificates are issued after DNS validates. Wait for propagation. Also check that no CAA record blocks Let's Encrypt, and that Cloudflare proxying is off while verifying.
+    // Transform HTML using Vite plugins.
+    html = await viteServer.transformIndexHtml(req.url, html)
 
-**WhatsApp does not open on desktop.** WhatsApp Web or the desktop app must be available. The form shows a fallback link if the browser blocks the pop-up.
+    res.send(html)
+  } catch (e) {
+    return next(e)
+  }
+})
+```
 
-**Map looks approximate.** The embed searches by address. For an exact pin, open the business on Google Maps, choose Share, Embed a map, and paste that URL into `mapsEmbedUrl` in `src/config/site.js`.
+Otherwise, you'll probably get this error:
 
-**Fonts or icons missing.** Run `npm install` again; fonts come from npm packages, not external CDNs.
+```
+Uncaught Error: @vitejs/plugin-react can't detect preamble. Something is wrong.
+```
+
+### disableOxcRecommendation
+
+If set, disables the recommendation to use `@vitejs/plugin-react-oxc` (which is shown when `rolldown-vite` is detected and `babel` is not configured).
+
+## Consistent components exports
+
+For React refresh to work correctly, your file should only export React components. You can find a good explanation in the [Gatsby docs](https://www.gatsbyjs.com/docs/reference/local-development/fast-refresh/#how-it-works).
+
+If an incompatible change in exports is found, the module will be invalidated and HMR will propagate. To make it easier to export simple constants alongside your component, the module is only invalidated when their value changes.
+
+You can catch mistakes and get more detailed warning with this [eslint rule](https://github.com/ArnaudBarre/eslint-plugin-react-refresh).
