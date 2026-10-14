@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+.vercel
+.DS_Store
+npm-debug.log*
+
+# generated at build time by scripts/generate-seo.mjs
+public/sitemap.xml
+public/robots.txt
